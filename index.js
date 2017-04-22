@@ -23,6 +23,11 @@ nodeCleanup(function(exitCode, signal) {
 });
 var DEFAULT_STORE_PATH = "./store/"
 
+// Express 
+var app = express(); 
+app.use(bodyParser.json());
+app.use(bodyParser.urlencoded({extended: true}));
+
 app.get("/status", function(req, res) {
     console.log("Received status request.");
     result = []
