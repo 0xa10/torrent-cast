@@ -101,7 +101,7 @@ function add_serve_torrent(client, torrent_link, callback) {
         }
 
         if (!torrent.ready) {
-            throw new Error("Not ready yet!");
+            //throw new Error("Not ready yet!");
             console.log("Waiting for torrent to become ready");
             torrent.once('ready', function() {
                 // If the request is still alive when the callback is invoked
