@@ -20,30 +20,11 @@ var device_list = new devicelist.DeviceList();
 var client = WebTorrentFifo();
 nodeCleanup(function(exitCode, signal) {
     client.destroy();
-    setTimeout(function() { console.log("Done."); }, 3000);
 });
-// Init storage 
 var DEFAULT_STORE_PATH = "./store/"
-mkdirp(DEFAULT_STORE_PATH, function(err) {
-    if (!err) {
-        console.log("Clearing data store.");
-        rimraf(DEFAULT_STORE_PATH + "*", function() {
-            console.log("Cleared!")
-        });
-    } else {
-        console.log("error opening directory!")
-        process.exit(-1);
-    }
-});
-
-
-// Express
-var app = express();
-app.use(bodyParser.json());
-app.use(bodyParser.urlencoded({extended: true}));
-process.setMaxListeners(0);
 
 app.get("/status", function(req, res) {
+    console.log("Received status request.");
     result = []
     for (var t in client.torrents) {
         result.push({"name": client.torrents[t].name,
@@ -69,6 +50,8 @@ app.get("/devices/:device_id/stream/:torrent_link", function(req, res) {
         device_id = req.params.device_id || "";
         torrent_link = req.params.torrent_link || "";
         
+        console.log("Received stream request for device " + device_id);
+
         media_url = "http://" + networkAddress() + ':' + server.address().port + '/'
         media_url += "stream/" + urlencode(torrent_link);
         
@@ -134,6 +117,24 @@ function add_serve_torrent(client, torrent_link, callback) {
             callback(torrent);
         }
 }
+
+function init_storage(path) {
+    // Init storage 
+    path = path || DEFAULT_STORE_PATH;
+    mkdirp(path, function(err) {
+        if (!err) {
+            console.log("Clearing data store.");
+            rimraf(path + "*", function() {
+                console.log("Cleared!")
+            });
+        } else {
+            console.log("error opening directory!")
+            process.exit(-1);
+        }
+    });
+}
+
+init_storage();
 server = app.listen(80);
 
 
