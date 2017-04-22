@@ -25,6 +25,16 @@ nodeCleanup(function(exitCode, signal) {
 var app = express();
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({extended: true}));
+process.setMaxListeners(0);
+
+app.get("/status", function(req, res) {
+    result = []
+    for (var t in client.torrents) {
+        result.push({"name": client.torrents[t].name,
+                     "ready": client.torrents[t].ready});
+    }
+    res.json({"jobs": result, "downloadSpeed": client.downloadSpeed});
+});
 
 app.get("/refresh", function(req, res) {
         console.log("Received refresh requests")
