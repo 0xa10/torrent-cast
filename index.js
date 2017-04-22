@@ -4,6 +4,8 @@ var fifo = require('fifo');
 var networkAddress = require('network-address');
 var urlencode = require('urlencode');
 var nodeCleanup = require('node-cleanup');
+var mkdirp = require('mkdirp');
+var rimraf = require('rimraf');
 
 var servefile = require("./lib/servefile");
 var devicelist = require('./lib/devicelist')
@@ -18,8 +20,22 @@ var device_list = new devicelist.DeviceList();
 var client = WebTorrentFifo();
 nodeCleanup(function(exitCode, signal) {
     client.destroy();
-    setTimeout(3000, function() { console.log("Done."); });
+    setTimeout(function() { console.log("Done."); }, 3000);
 });
+// Init storage 
+var DEFAULT_STORE_PATH = "./store/"
+mkdirp(DEFAULT_STORE_PATH, function(err) {
+    if (!err) {
+        console.log("Clearing data store.");
+        rimraf(DEFAULT_STORE_PATH + "*", function() {
+            console.log("Cleared!")
+        });
+    } else {
+        console.log("error opening directory!")
+        process.exit(-1);
+    }
+});
+
 
 // Express
 var app = express();
@@ -75,7 +91,7 @@ app.get("/stream/:link", function(req, res) {
 
         console.log("Received stream request for torrent " + torrent_link);
         try {
-            add_serve_torrent(client, torrent_link, servefile.serveLargestFile.bind(null, req, res))
+            add_serve_torrent(client, torrent_link, servefile.serveLargestFile.bind(null, req, res));
         } catch (error) {
             res.end(error.message)
         }
@@ -89,7 +105,7 @@ function add_serve_torrent(client, torrent_link, callback) {
         if (torrent === null) {
             console.log("Adding torrent " + torrent_link);
             try {
-                torrent = client.add(torrent_link)
+                torrent = client.add(torrent_link, {path: DEFAULT_STORE_PATH})
             } catch (error) {
                 console.error(error);
                 throw new Error("Unable to add torrent.");
@@ -97,6 +113,7 @@ function add_serve_torrent(client, torrent_link, callback) {
         }
 
         if (!torrent.ready) {
+            throw new Error("Not ready yet!");
             console.log("Waiting for torrent to become ready");
             torrent.once('ready', function() {
                 // If the request is still alive when the callback is invoked
